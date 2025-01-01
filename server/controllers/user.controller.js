@@ -1,63 +1,72 @@
-import sendEmail from "../config/sendEmail.js";
-import UserModel from "../models/user.model.js";
-import bcryptjs from 'bcryptjs';
-import genertedRefreshToken from "../utils/generatedRefreshToken.js";
-import generatedAccessToken from "../utils/generatedAccessToken.js";
-import uploadImageClodinary from "../utils/uploadImageClodinary.js";
-import generatedOtp from "../utils/generateOtp.js";
-import forgotPasswordTemplate from "../utils/forgotPasswordTemplate.js";
+import sendEmail from '../config/sendEmail.js'
+import UserModel from '../models/user.model.js'
+import bcryptjs from 'bcryptjs'
+import verifyEmailTemplate from '../utils/verifyEmailTemplate.js'
+import generatedAccessToken from '../utils/generatedAccessToken.js'
+import genertedRefreshToken from '../utils/generatedRefreshToken.js'
+import uploadImageClodinary from '../utils/uploadImageClodinary.js'
+import generatedOtp from '../utils/generatedOtp.js'
+import forgotPasswordTemplate from '../utils/forgotPasswordTemplate.js'
 import jwt from 'jsonwebtoken'
-export async function registerUserContoller(req, res) {
+
+export async function registerUserController(request,response){
     try {
-        const { name, email, password } = req.body;
-        if (!name || !email || !password) {
-            return res.status(400).json({
-                message: 'Provide email, name, and password',
-                error: true,
-                success: false,
-            });
+        const { name, email , password } = request.body
+
+        if(!name || !email || !password){
+            return response.status(400).json({
+                message : "provide email, name, password",
+                error : true,
+                success : false
+            })
         }
 
-        const user = await UserModel.findOne({ email });
-        if (user) {
-            return res.json({
-                message: 'User already exists!',
-            });
+        const user = await UserModel.findOne({ email })
+
+        if(user){
+            return response.json({
+                message : "Already register email",
+                error : true,
+                success : false
+            })
         }
 
-        const salt = await bcryptjs.genSalt(10);
-        const hashPassword = await bcryptjs.hash(password, salt);
+        const salt = await bcryptjs.genSalt(10)
+        const hashPassword = await bcryptjs.hash(password,salt)
+
         const payload = {
             name,
             email,
-            password: hashPassword,
-        };
+            password : hashPassword
+        }
 
-        const newUser = new UserModel(payload);
-        const save = await newUser.save();
+        const newUser = new UserModel(payload)
+        const save = await newUser.save()
+
+        const VerifyEmailUrl = `${process.env.FRONTEND_URL}/verify-email?code=${save?._id}`
 
         const verifyEmail = await sendEmail({
-            sendTo: email,
-            subject: "Verification Email from Blinkit",
-            html: `
-                <h1>Welcome to Blinkit</h1>
-                <p>Hi ${name},</p>
-                <p>Thank you for registering! Please verify your email to activate your account.</p>
-                <p><a href="https://your-verification-link.com">Click here to verify</a></p>
-            `,
-        });
+            sendTo : email,
+            subject : "Verify email from binkeyit",
+            html : verifyEmailTemplate({
+                name,
+                url : VerifyEmailUrl
+            })
+        })
 
-        return res.status(201).json({
-            success: true,
-            message: 'User registered successfully and verification email sent!',
-            data: save,
-        });
+        return response.json({
+            message : "User register successfully",
+            error : false,
+            success : true,
+            data : save
+        })
+
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: error.message || error,
-            error: true,
-        });
+        return response.status(500).json({
+            message : error.message || error,
+            error : true,
+            success : false
+        })
     }
 }
 
@@ -93,6 +102,7 @@ export async function verifyEmailController(request,response){
     }
 }
 
+//login controller
 export async function loginController(request,response){
     try {
         const { email , password } = request.body
@@ -199,7 +209,6 @@ export async function logoutController(request,response){
         })
     }
 }
-
 
 //upload user avatar
 export async  function uploadAvatar(request,response){
