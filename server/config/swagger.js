@@ -11,7 +11,7 @@ const swaggerOptions = {
         },
         servers: [
             {
-                url: 'http://localhost:8000/api/user/',
+                url: 'http://blinkit-cmkx.vercel.app/api/user/',
             },
         ],
         components: {
